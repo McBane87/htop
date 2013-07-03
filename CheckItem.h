@@ -9,6 +9,7 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include <stdbool.h>
 #include "Object.h"
 
 typedef struct CheckItem_ {
