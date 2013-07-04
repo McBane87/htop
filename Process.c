@@ -11,6 +11,7 @@ in the source distribution for its full text.
 #include "CRT.h"
 #include "String.h"
 #include "RichString.h"
+#include "htop-sysdeps.h"
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -634,13 +635,13 @@ bool Process_changePriorityBy(Process* this, size_t delta) {
 }
 
 IOPriority Process_updateIOPriority(Process* this) {
-   IOPriority ioprio = syscall(SYS_ioprio_get, IOPRIO_WHO_PROCESS, this->pid);
+   IOPriority ioprio = sysdep_get_ioprio(this->pid);
    this->ioPriority = ioprio;
    return ioprio;
 }
 
 bool Process_setIOPriority(Process* this, IOPriority ioprio) {
-   syscall(SYS_ioprio_set, IOPRIO_WHO_PROCESS, this->pid, ioprio);
+   sysdep_set_ioprio(this->pid, ioprio);
    return (Process_updateIOPriority(this) == ioprio);
 }
 

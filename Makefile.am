@@ -22,6 +22,14 @@ IOPriorityPanel.c SignalsPanel.c String.c SwapMeter.c TasksMeter.c TraceScreen.c
 UptimeMeter.c UsersTable.c Vector.c AvailableColumnsPanel.c AffinityPanel.c \
 HostnameMeter.c OpenFilesScreen.c Affinity.c IOPriority.c IncSet.c
 
+if HAVE_LINUX
+myhtopsources += sysdeps/linux.c
+endif
+
+if HAVE_SOLARIS
+myhtopsources += sysdeps/solaris.c
+endif
+
 myhtopheaders = AvailableColumnsPanel.h AvailableMetersPanel.h \
 CategoriesPanel.h CheckItem.h ClockMeter.h ColorsPanel.h ColumnsPanel.h \
 IOPriorityPanel.h CPUMeter.h CRT.h DisplayOptionsPanel.h FunctionBar.h \

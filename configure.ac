@@ -104,10 +104,24 @@ if test ! -z "$missing_headers"; then
   AC_MSG_ERROR([missing headers: $missing_headers])
 fi
 
+case "${host}" in
+    *linux* )
+    have_linux=1;
 if test "x$cross_compiling" = xno; then
 AC_CHECK_FILE($PROCDIR/stat,,AC_MSG_ERROR(Cannot find /proc/stat. Make sure you have a Linux-compatible /proc filesystem mounted. See the file README for help.))
 AC_CHECK_FILE($PROCDIR/meminfo,,AC_MSG_ERROR(Cannot find /proc/meminfo. Make sure you have a Linux-compatible /proc filesystem mounted. See the file README for help.))
 fi
+;;
+    *solaris*)
+    have_solaris=1;
+    ;;
+    *)
+AC_MSG_ERROR(${host} is not supported.)
+    ;;
+esac
+
+AM_CONDITIONAL([HAVE_LINUX], [ test "x$have_linux" = x1 ])
+AM_CONDITIONAL([HAVE_SOLARIS], [ test "x$have_solaris" = x1 ])
 
 AC_ARG_ENABLE(native_affinity, [AC_HELP_STRING([--enable-native-affinity], [enable native sched_setaffinity and sched_getaffinity for affinity support, disables hwloc])], ,enable_native_affinity="yes")
 if test "x$enable_native_affinity" = xyes -a "x$cross_compiling" = xno; then
