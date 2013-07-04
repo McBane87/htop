@@ -9,6 +9,7 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
+#include <string.h>
 #define String_startsWith(s, match) (strstr((s), (match)) == (s))
 
 char* String_cat(const char* s1, const char* s2);
