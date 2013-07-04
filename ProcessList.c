@@ -205,17 +205,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList) {
    /* tree-view auxiliary buffers */
    this->processes2 = Vector_new(Class(Process), true, DEFAULT_SIZE);
    
-   FILE* file = fopen(PROCSTATFILE, "r");
-   if (file == NULL) {
-      CRT_fatalError("Cannot open " PROCSTATFILE);
-   }
-   char buffer[256];
-   int cpus = -1;
-   do {
-      cpus++;
-      fgets(buffer, 255, file);
-   } while (String_startsWith(buffer, "cpu"));
-   fclose(file);
+   int cpus = sysconf(_SC_NPROCESSORS_ONLN);
    this->cpuCount = cpus - 1;
 
 #ifdef HAVE_LIBHWLOC
