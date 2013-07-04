@@ -9,12 +9,12 @@ in the source distribution for its full text.
 
 #include "config.h"
 
-#include <string.h>
 #include <strings.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 /*{
+#include <string.h>
 #define String_startsWith(s, match) (strstr((s), (match)) == (s))
 }*/
 

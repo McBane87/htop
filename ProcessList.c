@@ -28,6 +28,8 @@ in the source distribution for its full text.
 #include <fcntl.h>
 #include <errno.h>
 
+#include "htop-sysdeps.h"
+
 /*{
 #include "Vector.h"
 #include "Hashtable.h"
@@ -827,53 +829,14 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
 
 void ProcessList_scan(ProcessList* this) {
    unsigned long long int usertime, nicetime, systemtime, systemalltime, idlealltime, idletime, totaltime, virtalltime;
-   unsigned long long int swapFree = 0;
 
-   FILE* file = fopen(PROCMEMINFOFILE, "r");
-   if (file == NULL) {
-      CRT_fatalError("Cannot open " PROCMEMINFOFILE);
-   }
-   int cpus = this->cpuCount;
-   {
-      char buffer[128];
-      while (fgets(buffer, 128, file)) {
-   
-         switch (buffer[0]) {
-         case 'M':
-            if (String_startsWith(buffer, "MemTotal:"))
-               sscanf(buffer, "MemTotal: %llu kB", &this->totalMem);
-            else if (String_startsWith(buffer, "MemFree:"))
-               sscanf(buffer, "MemFree: %llu kB", &this->freeMem);
-            else if (String_startsWith(buffer, "MemShared:"))
-               sscanf(buffer, "MemShared: %llu kB", &this->sharedMem);
-            break;
-         case 'B':
-            if (String_startsWith(buffer, "Buffers:"))
-               sscanf(buffer, "Buffers: %llu kB", &this->buffersMem);
-            break;
-         case 'C':
-            if (String_startsWith(buffer, "Cached:"))
-               sscanf(buffer, "Cached: %llu kB", &this->cachedMem);
-            break;
-         case 'S':
-            if (String_startsWith(buffer, "SwapTotal:"))
-               sscanf(buffer, "SwapTotal: %llu kB", &this->totalSwap);
-            if (String_startsWith(buffer, "SwapFree:"))
-               sscanf(buffer, "SwapFree: %llu kB", &swapFree);
-            break;
-         }
-      }
-   }
+   sysdep_get_meminfo(this);
 
-   this->usedMem = this->totalMem - this->freeMem;
-   this->usedSwap = this->totalSwap - swapFree;
-   fclose(file);
-
-   file = fopen(PROCSTATFILE, "r");
+   FILE *file = fopen(PROCSTATFILE, "r");
    if (file == NULL) {
       CRT_fatalError("Cannot open " PROCSTATFILE);
    }
-   for (int i = 0; i <= cpus; i++) {
+   for (int i = 0; i <= this->cpuCount; i++) {
       char buffer[256];
       int cpuid;
       unsigned long long int ioWait, irq, softIrq, steal, guest;
@@ -932,7 +895,7 @@ void ProcessList_scan(ProcessList* this) {
       cpuData->guestTime = guest;
       cpuData->totalTime = totaltime;
    }
-   double period = (double)this->cpus[0].totalPeriod / cpus; fclose(file);
+   double period = (double)this->cpus[0].totalPeriod / this->cpuCount; fclose(file);
 
    // mark all process as "dirty"
    for (int i = 0; i < Vector_size(this->processes); i++) {
