@@ -265,11 +265,7 @@ static char* Process_pidFormat = "%7u ";
 static char* Process_tpgidFormat = "%7u ";
 
 void Process_getMaxPid() {
-   FILE* file = fopen(PROCDIR "/sys/kernel/pid_max", "r");
-   if (!file) return;
-   int maxPid = 4194303;
-   fscanf(file, "%32d", &maxPid);
-   fclose(file);
+   int maxPid = sysdep_max_pid();
    if (maxPid > 99999) {
       Process_fieldTitles[PID] =     "    PID ";
       Process_fieldTitles[PPID] =    "   PPID ";

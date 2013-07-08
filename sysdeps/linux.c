@@ -138,3 +138,14 @@ void sysdep_update_cpu_data(ProcessList *this)
    }
    fclose(file);
 }
+
+int sysdep_max_pid()
+{
+   int maxPid = 4194303;
+   FILE* file = fopen(PROCDIR "/sys/kernel/pid_max", "r");
+   if (file) {
+       fscanf(file, "%32d", &maxPid);
+       fclose(file);
+   }
+   return maxPid;
+}

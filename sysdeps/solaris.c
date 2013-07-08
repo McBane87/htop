@@ -80,3 +80,8 @@ void sysdep_update_cpu_data(ProcessList *this)
       cpuData->totalTime = totaltime;
    }
 }
+
+int sysdep_max_pid()
+{
+    return sysconf(_SC_MAXPID);
+}
