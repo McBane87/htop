@@ -828,74 +828,11 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
 }
 
 void ProcessList_scan(ProcessList* this) {
-   unsigned long long int usertime, nicetime, systemtime, systemalltime, idlealltime, idletime, totaltime, virtalltime;
 
    sysdep_get_meminfo(this);
+   sysdep_update_cpu_data(this);
 
-   FILE *file = fopen(PROCSTATFILE, "r");
-   if (file == NULL) {
-      CRT_fatalError("Cannot open " PROCSTATFILE);
-   }
-   for (int i = 0; i <= this->cpuCount; i++) {
-      char buffer[256];
-      int cpuid;
-      unsigned long long int ioWait, irq, softIrq, steal, guest;
-      ioWait = irq = softIrq = steal = guest = 0;
-      // Dependending on your kernel version,
-      // 5, 7 or 8 of these fields will be set.
-      // The rest will remain at zero.
-      fgets(buffer, 255, file);
-      if (i == 0)
-         sscanf(buffer, "cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu", &usertime, &nicetime, &systemtime, &idletime, &ioWait, &irq, &softIrq, &steal, &guest);
-      else {
-         sscanf(buffer, "cpu%d %llu %llu %llu %llu %llu %llu %llu %llu %llu", &cpuid, &usertime, &nicetime, &systemtime, &idletime, &ioWait, &irq, &softIrq, &steal, &guest);
-         assert(cpuid == i - 1);
-      }
-      // Fields existing on kernels >= 2.6
-      // (and RHEL's patched kernel 2.4...)
-      idlealltime = idletime + ioWait;
-      systemalltime = systemtime + irq + softIrq;
-      virtalltime = steal + guest;
-      totaltime = usertime + nicetime + systemalltime + idlealltime + virtalltime;
-      CPUData* cpuData = &(this->cpus[i]);
-      assert (usertime >= cpuData->userTime);
-      assert (nicetime >= cpuData->niceTime);
-      assert (systemtime >= cpuData->systemTime);
-      assert (idletime >= cpuData->idleTime);
-      assert (totaltime >= cpuData->totalTime);
-      assert (systemalltime >= cpuData->systemAllTime);
-      assert (idlealltime >= cpuData->idleAllTime);
-      assert (ioWait >= cpuData->ioWaitTime);
-      assert (irq >= cpuData->irqTime);
-      assert (softIrq >= cpuData->softIrqTime);
-      assert (steal >= cpuData->stealTime);
-      assert (guest >= cpuData->guestTime);
-      cpuData->userPeriod = usertime - cpuData->userTime;
-      cpuData->nicePeriod = nicetime - cpuData->niceTime;
-      cpuData->systemPeriod = systemtime - cpuData->systemTime;
-      cpuData->systemAllPeriod = systemalltime - cpuData->systemAllTime;
-      cpuData->idleAllPeriod = idlealltime - cpuData->idleAllTime;
-      cpuData->idlePeriod = idletime - cpuData->idleTime;
-      cpuData->ioWaitPeriod = ioWait - cpuData->ioWaitTime;
-      cpuData->irqPeriod = irq - cpuData->irqTime;
-      cpuData->softIrqPeriod = softIrq - cpuData->softIrqTime;
-      cpuData->stealPeriod = steal - cpuData->stealTime;
-      cpuData->guestPeriod = guest - cpuData->guestTime;
-      cpuData->totalPeriod = totaltime - cpuData->totalTime;
-      cpuData->userTime = usertime;
-      cpuData->niceTime = nicetime;
-      cpuData->systemTime = systemtime;
-      cpuData->systemAllTime = systemalltime;
-      cpuData->idleAllTime = idlealltime;
-      cpuData->idleTime = idletime;
-      cpuData->ioWaitTime = ioWait;
-      cpuData->irqTime = irq;
-      cpuData->softIrqTime = softIrq;
-      cpuData->stealTime = steal;
-      cpuData->guestTime = guest;
-      cpuData->totalTime = totaltime;
-   }
-   double period = (double)this->cpus[0].totalPeriod / this->cpuCount; fclose(file);
+   double period = (double)this->cpus[0].totalPeriod / this->cpuCount;
 
    // mark all process as "dirty"
    for (int i = 0; i < Vector_size(this->processes); i++) {
