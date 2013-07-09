@@ -20,7 +20,7 @@ LoadAverageMeter.c MemoryMeter.c Meter.c MetersPanel.c Object.c Panel.c \
 BatteryMeter.c Process.c ProcessList.c RichString.c ScreenManager.c Settings.c \
 IOPriorityPanel.c SignalsPanel.c String.c SwapMeter.c TasksMeter.c TraceScreen.c \
 UptimeMeter.c UsersTable.c Vector.c AvailableColumnsPanel.c AffinityPanel.c \
-HostnameMeter.c OpenFilesScreen.c Affinity.c IOPriority.c IncSet.c
+HostnameMeter.c OpenFilesScreen.c Affinity.c IOPriority.c IncSet.c utils.c
 
 if HAVE_LINUX
 myhtopsources += sysdeps/linux.c
@@ -42,7 +42,7 @@ HostnameMeter.h OpenFilesScreen.h Affinity.h IOPriority.h IncSet.h
 SUFFIXES = .h
 
 BUILT_SOURCES = $(myhtopheaders)
-htop_SOURCES = $(myhtopheaders) $(myhtopsources) config.h
+htop_SOURCES = $(myhtopheaders) $(myhtopsources) config.h htop-sysdeps.h utils.h
 
 profile:
 	$(MAKE) all CFLAGS="-pg" AM_CPPFLAGS="-pg -O2 -DNDEBUG"

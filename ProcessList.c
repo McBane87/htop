@@ -29,6 +29,7 @@ in the source distribution for its full text.
 #include <errno.h>
 
 #include "htop-sysdeps.h"
+#include "utils.h"
 
 /*{
 #include "Vector.h"
@@ -179,22 +180,6 @@ const char *ProcessList_treeStrUtf8[TREE_STR_COUNT] = {
    "+",            // TREE_STR_OPEN +
    "\xe2\x94\x80", // TREE_STR_SHUT ─
 };
-
-static ssize_t xread(int fd, void *buf, size_t count) {
-  // Read some bytes. Retry on EINTR and when we don't get as many bytes as we requested.
-  size_t alreadyRead = 0;
-  start:;
-  ssize_t res = read(fd, buf, count);
-  if (res == -1 && errno == EINTR) goto start;
-  if (res > 0) {
-    buf = ((char*)buf)+res;
-    count -= res;
-    alreadyRead += res;
-  }
-  if (res == -1) return -1;
-  if (count == 0 || res == 0) return alreadyRead;
-  goto start;
-}
 
 ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList) {
    ProcessList* this;
@@ -390,75 +375,6 @@ void ProcessList_sort(ProcessList* this) {
       this->processes = this->processes2;
       this->processes2 = t;
    }
-}
-
-static bool ProcessList_readStatFile(Process *process, const char* dirname, const char* name, char* command) {
-   char filename[MAX_NAME+1];
-   snprintf(filename, MAX_NAME, "%s/%s/stat", dirname, name);
-   int fd = open(filename, O_RDONLY);
-   if (fd == -1)
-      return false;
-
-   static char buf[MAX_READ+1];
-
-   int size = xread(fd, buf, MAX_READ);
-   close(fd);
-   if (!size) return false;
-   buf[size] = '\0';
-
-   assert(process->pid == atoi(buf));
-   char *location = strchr(buf, ' ');
-   if (!location) return false;
-
-   location += 2;
-   char *end = strrchr(location, ')');
-   if (!end) return false;
-   
-   int commsize = end - location;
-   memcpy(command, location, commsize);
-   command[commsize] = '\0';
-   location = end + 2;
-
-   process->state = location[0];
-   location += 2;
-   process->ppid = strtol(location, &location, 10);
-   location += 1;
-   process->pgrp = strtoul(location, &location, 10);
-   location += 1;
-   process->session = strtoul(location, &location, 10);
-   location += 1;
-   process->tty_nr = strtoul(location, &location, 10);
-   location += 1;
-   process->tpgid = strtol(location, &location, 10);
-   location += 1;
-   process->flags = strtoul(location, &location, 10);
-   location += 1;
-   location = strchr(location, ' ')+1;
-   location = strchr(location, ' ')+1;
-   location = strchr(location, ' ')+1;
-   location = strchr(location, ' ')+1;
-   process->utime = strtoull(location, &location, 10);
-   location += 1;
-   process->stime = strtoull(location, &location, 10);
-   location += 1;
-   process->cutime = strtoull(location, &location, 10);
-   location += 1;
-   process->cstime = strtoull(location, &location, 10);
-   location += 1;
-   process->priority = strtol(location, &location, 10);
-   location += 1;
-   process->nice = strtol(location, &location, 10);
-   location += 1;
-   process->nlwp = strtol(location, &location, 10);
-   location += 1;
-   for (int i=0; i<17; i++) location = strchr(location, ' ')+1;
-   process->exit_signal = strtol(location, &location, 10);
-   location += 1;
-   assert(location != NULL);
-   process->processor = strtol(location, &location, 10);
-   assert(location == NULL);
-
-   return true;
 }
 
 static bool ProcessList_statProcessDir(Process* process, const char* dirname, char* name, time_t curTime) {
@@ -742,9 +658,8 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
 
       process->show = ! ((hideKernelThreads && Process_isKernelThread(process)) || (hideUserlandThreads && Process_isUserlandThread(process)));
 
-      char command[MAX_NAME+1];
       unsigned long long int lasttimes = (process->utime + process->stime);
-      if (! ProcessList_readStatFile(process, dirname, name, command))
+      if (! sysdep_get_process_info(process, pid))
          goto errorReadingProcess;
       if (this->flags & PROCESS_FLAG_IOPRIO)
          Process_updateIOPriority(process);
@@ -786,6 +701,7 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          }
       }
 
+      /* WTF?
       if (process->state == 'Z') {
          free(process->comm);
          process->comm = strdup(command);
@@ -803,6 +719,7 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
             this->userlandThreads++;
          }
       }
+      */
 
       this->totalTasks++;
       if (process->state == 'R')

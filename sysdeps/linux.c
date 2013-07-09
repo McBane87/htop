@@ -3,13 +3,19 @@
 #endif
 
 #include <assert.h>
+#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
 #include "CRT.h"
 #include "String.h"
 #include "htop-sysdeps.h"
+#include "utils.h"
 
 IOPriority sysdep_get_ioprio(pid_t p)
 {
@@ -148,4 +154,72 @@ int sysdep_max_pid()
        fclose(file);
    }
    return maxPid;
+}
+
+bool sysdep_get_process_info(Process *process, pid_t pid)
+{
+   char filename[MAX_NAME+1];
+   snprintf(filename, MAX_NAME, PROCDIR "/%u/stat", pid);
+   int fd = open(filename, O_RDONLY);
+   if (fd == -1)
+      return false;
+
+   static char buf[MAX_READ+1];
+
+   int size = xread(fd, buf, MAX_READ);
+   close(fd);
+   if (!size) return false;
+   buf[size] = '\0';
+
+   assert(process->pid == atoi(buf));
+   char *location = strchr(buf, ' ');
+   if (!location) return false;
+
+   location += 2;
+   char *end = strrchr(location, ')');
+   if (!end) return false;
+   
+   location = end + 2;
+
+   process->state = location[0];
+   location += 2;
+   process->ppid = strtol(location, &location, 10);
+   location += 1;
+   process->pgrp = strtoul(location, &location, 10);
+   location += 1;
+   process->session = strtoul(location, &location, 10);
+   location += 1;
+   process->tty_nr = strtoul(location, &location, 10);
+   location += 1;
+   process->tpgid = strtol(location, &location, 10);
+   location += 1;
+   process->flags = strtoul(location, &location, 10);
+   location += 1;
+   location = strchr(location, ' ')+1;
+   location = strchr(location, ' ')+1;
+   location = strchr(location, ' ')+1;
+   location = strchr(location, ' ')+1;
+   process->utime = strtoull(location, &location, 10);
+   location += 1;
+   process->stime = strtoull(location, &location, 10);
+   location += 1;
+   process->cutime = strtoull(location, &location, 10);
+   location += 1;
+   process->cstime = strtoull(location, &location, 10);
+   location += 1;
+   process->priority = strtol(location, &location, 10);
+   location += 1;
+   process->nice = strtol(location, &location, 10);
+   location += 1;
+   process->nlwp = strtol(location, &location, 10);
+   location += 1;
+   for (int i=0; i<17; i++) location = strchr(location, ' ')+1;
+   process->exit_signal = strtol(location, &location, 10);
+   location += 1;
+   assert(location != NULL);
+   process->processor = strtol(location, &location, 10);
+   assert(location == NULL);
+
+   return true;
+    
 }
