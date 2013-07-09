@@ -1,9 +1,13 @@
-#include <unistd.h>
+#include <fcntl.h>
+#include <procfs.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/swap.h>
+#include <unistd.h>
 #include <vm/anon.h>
 
 #include "htop-sysdeps.h"
+#include "utils.h"
 
 /* dummy */
 IOPriority sysdep_get_ioprio(pid_t p)
@@ -84,4 +88,56 @@ void sysdep_update_cpu_data(ProcessList *this)
 int sysdep_max_pid()
 {
     return sysconf(_SC_MAXPID);
+}
+
+bool sysdep_get_process_info(Process *process, pid_t pid)
+{
+    char filename[34];
+    int fd;
+    ssize_t r;
+    psinfo_t info;
+    pstatus_t status;
+
+    snprintf(filename, sizeof(filename), "/proc/%d/psinfo", pid);
+    fd = open(filename, O_RDONLY);
+    if (-1 == fd) return false;
+    r = xread(fd, &info, sizeof(info));
+    (void) close(fd);
+    if (!r) return false;
+
+    snprintf(filename, sizeof(filename), "/proc/%d/status", pid);
+    fd = open(filename, O_RDONLY);
+    if (-1 == fd) return false;
+    r = xread(fd, &status, sizeof(status));
+    (void) close(fd);
+    if (!r) return false;
+
+    process->state = info.pr_lwp.pr_state;
+
+    process->ppid = info.pr_ppid;
+    process->pgrp = info.pr_pgid;
+    process->session = info.pr_sid;
+    process->tty_nr = info.pr_ttydev;
+    process->tpgid = -1; // FIXME
+    process->flags = info.pr_flag;
+
+    long tix = sysconf(_SC_CLK_TCK);
+    process->utime = status.pr_utime.tv_sec * tix;
+    process->stime = status.pr_stime.tv_sec * tix;
+    process->cutime = status.pr_cutime.tv_sec * tix;
+    process->cstime = status.pr_cstime.tv_sec * tix;
+
+    process->priority = info.pr_lwp.pr_pri;
+    process->nice = info.pr_lwp.pr_nice;
+
+    process->nlwp = info.pr_nlwp;
+
+    // FIXME:
+    process->exit_signal = SIGCHLD;
+
+    process->processor = info.pr_lwp.pr_onpro;
+
+    process->comm = strdup(info.pr_psargs);
+
+    return true;
 }

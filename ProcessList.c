@@ -653,8 +653,8 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          ProcessList_readIoFile(process, dirname, name, now);
       #endif
 
-      if (! ProcessList_readStatmFile(process, dirname, name))
-         goto errorReadingProcess;
+//      if (! ProcessList_readStatmFile(process, dirname, name))
+//         goto errorReadingProcess;
 
       process->show = ! ((hideKernelThreads && Process_isKernelThread(process)) || (hideUserlandThreads && Process_isUserlandThread(process)));
 
@@ -689,10 +689,10 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          if (this->flags & PROCESS_FLAG_VSERVER)
             ProcessList_readVServerData(process, dirname, name);
          #endif
-         
+/*
          if (! ProcessList_readCmdlineFile(process, dirname, name))
             goto errorReadingProcess;
-
+*/
          ProcessList_add(this, process);
       } else {
          if (this->updateProcessNames) {
