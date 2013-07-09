@@ -148,7 +148,7 @@ void sysdep_update_cpu_data(ProcessList *this)
 int sysdep_max_pid()
 {
    int maxPid = 4194303;
-   FILE* file = fopen(PROCDIR "/sys/kernel/pid_max", "r");
+   FILE* file = fopen("/proc/sys/kernel/pid_max", "r");
    if (file) {
        fscanf(file, "%32d", &maxPid);
        fclose(file);
@@ -156,17 +156,19 @@ int sysdep_max_pid()
    return maxPid;
 }
 
+
 bool sysdep_get_process_info(Process *process, pid_t pid)
 {
    char filename[MAX_NAME+1];
-   snprintf(filename, MAX_NAME, PROCDIR "/%u/stat", pid);
-   int fd = open(filename, O_RDONLY);
-   if (fd == -1)
-      return false;
-
    static char buf[MAX_READ+1];
+   int fd;
+   ssize_t size;
 
-   int size = xread(fd, buf, MAX_READ);
+   snprintf(filename, MAX_NAME, "/proc/%d/stat", pid);
+   fd = open(filename, O_RDONLY);
+   if (fd == -1) return false;
+
+   size = xread(fd, buf, MAX_READ);
    close(fd);
    if (!size) return false;
    buf[size] = '\0';
@@ -178,6 +180,8 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
    location += 2;
    char *end = strrchr(location, ')');
    if (!end) return false;
+
+   process->comm = strndup(location, end - location);
    
    location = end + 2;
 
@@ -219,6 +223,23 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
    assert(location != NULL);
    process->processor = strtol(location, &location, 10);
    assert(location == NULL);
+
+
+   /* Try to get full command line */
+   snprintf(filename, MAX_NAME, "/proc/%d/cmdline", pid);
+   fd = open(filename, O_RDONLY);
+   if (fd == -1) return true; // non-fatal
+
+   size = xread(fd, buf, MAX_READ);
+   close(fd);
+   if (size <= 0) return true; // non-fatal
+
+   for (int i = 0; i < size; i++)
+       if (buf[i] == '\0' || buf[i] == '\n')
+            buf[i] = ' ';
+   buf[size] = '\0';
+   free(process->comm);
+   process->comm = strdup(buf);
 
    return true;
     
