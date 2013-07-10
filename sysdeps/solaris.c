@@ -96,7 +96,7 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     int fd;
     ssize_t r;
     psinfo_t info;
-    pstatus_t status;
+    prusage_t usage;
 
     snprintf(filename, sizeof(filename), "/proc/%d/psinfo", pid);
     fd = open(filename, O_RDONLY);
@@ -105,14 +105,16 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     (void) close(fd);
     if (!r) return false;
 
-    snprintf(filename, sizeof(filename), "/proc/%d/status", pid);
+    snprintf(filename, sizeof(filename), "/proc/%d/usage", pid);
     fd = open(filename, O_RDONLY);
     if (-1 == fd) return false;
-    r = xread(fd, &status, sizeof(status));
+    r = xread(fd, &usage, sizeof(usage));
     (void) close(fd);
     if (!r) return false;
 
     process->state = info.pr_lwp.pr_state;
+
+    process->st_uid = info.pr_uid;
 
     process->ppid = info.pr_ppid;
     process->pgrp = info.pr_pgid;
@@ -122,10 +124,8 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     process->flags = info.pr_flag;
 
     long tix = sysconf(_SC_CLK_TCK);
-    process->utime = status.pr_utime.tv_sec * tix;
-    process->stime = status.pr_stime.tv_sec * tix;
-    process->cutime = status.pr_cutime.tv_sec * tix;
-    process->cstime = status.pr_cstime.tv_sec * tix;
+    process->utime = usage.pr_utime.tv_sec * tix;
+    process->stime = usage.pr_stime.tv_sec * tix;
 
     process->priority = info.pr_lwp.pr_pri;
     process->nice = info.pr_lwp.pr_nice;
@@ -138,6 +138,20 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     process->processor = info.pr_lwp.pr_onpro;
 
     process->comm = strdup(info.pr_psargs);
+
+
+    /* XXX root only: */
+    snprintf(filename, sizeof(filename), "/proc/%d/status", pid);
+    fd = open(filename, O_RDONLY);
+    if (fd > 0) {
+        pstatus_t status;
+        if (xread(fd, &status, sizeof(status)) > 0) {
+            process->cutime = status.pr_cutime.tv_sec * tix;
+            process->cstime = status.pr_cstime.tv_sec * tix;
+        }
+        (void) close(fd);
+    }
+
 
     return true;
 }
