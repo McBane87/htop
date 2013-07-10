@@ -14,6 +14,6 @@ void sysdep_get_meminfo(ProcessList*);
 void sysdep_update_cpu_data(ProcessList *);
 int sysdep_max_pid();
 bool sysdep_get_process_info(Process *, pid_t);
-
+long sysdep_uptime(); // seconds since boot
 #endif
 

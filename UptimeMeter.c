@@ -21,13 +21,7 @@ int UptimeMeter_attributes[] = {
 };
 
 static void UptimeMeter_setValues(Meter* this, char* buffer, int len) {
-   double uptime = 0;
-   FILE* fd = fopen(PROCDIR "/uptime", "r");
-   if (fd) {
-      fscanf(fd, "%64lf", &uptime);
-      fclose(fd);
-   }
-   int totalseconds = (int) ceil(uptime);
+   long totalseconds = sysdep_uptime();
    int seconds = totalseconds % 60;
    int minutes = (totalseconds/60) % 60;
    int hours = (totalseconds/3600) % 24;

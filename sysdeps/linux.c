@@ -242,5 +242,15 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
    process->comm = strdup(buf);
 
    return true;
-    
+}
+
+long sysdep_uptime()
+{
+   double uptime = 0;
+   FILE* fd = fopen("/proc/uptime", "r");
+   if (fd) {
+      fscanf(fd, "%64lf", &uptime);
+      fclose(fd);
+   }
+   return (long) uptime;
 }

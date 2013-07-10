@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/swap.h>
+#include <time.h>
 #include <unistd.h>
 #include <vm/anon.h>
 
@@ -154,4 +155,18 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
 
 
     return true;
+}
+
+long sysdep_uptime()
+{
+    long uptime = 0;
+    int fd;
+    if ((fd = open("/proc/0/psinfo", O_RDONLY)) > 0) {
+        psinfo_t pid0;
+        if (xread(fd, &pid0, sizeof(pid0)) > 0) {
+            uptime = time(NULL) - pid0.pr_start.tv_sec;
+        }
+        (void) close(fd);
+    }
+    return uptime;
 }
