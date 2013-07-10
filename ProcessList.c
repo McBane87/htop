@@ -670,9 +670,6 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
 
       if(!existingProcess) {
 
-         if (! ProcessList_statProcessDir(process, dirname, name, curTime))
-            goto errorReadingProcess;
-
          process->user = UsersTable_getRef(this->usersTable, process->st_uid);
 
          #ifdef HAVE_OPENVZ
@@ -689,15 +686,11 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          if (this->flags & PROCESS_FLAG_VSERVER)
             ProcessList_readVServerData(process, dirname, name);
          #endif
-/*
-         if (! ProcessList_readCmdlineFile(process, dirname, name))
-            goto errorReadingProcess;
-*/
          ProcessList_add(this, process);
       } else {
          if (this->updateProcessNames) {
-            if (! ProcessList_readCmdlineFile(process, dirname, name))
-               goto errorReadingProcess;
+//            if (! ProcessList_readCmdlineFile(process, dirname, name))
+//               goto errorReadingProcess;
          }
       }
 
