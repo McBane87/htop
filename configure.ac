@@ -104,6 +104,7 @@ if test ! -z "$missing_headers"; then
   AC_MSG_ERROR([missing headers: $missing_headers])
 fi
 
+AC_SEARCH_LIBS([define_key], [tinfo])
 
 AS_CASE([$host],
     [*linux*], [have_linux=1],
