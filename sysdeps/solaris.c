@@ -129,7 +129,7 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     process->stime = usage.pr_stime.tv_sec * tix;
 
     process->priority = info.pr_lwp.pr_pri;
-    process->nice = info.pr_lwp.pr_nice;
+    process->nice = info.pr_lwp.pr_nice - 20;
 
     process->nlwp = info.pr_nlwp;
 
