@@ -113,7 +113,7 @@ bool sysdep_get_process_info(Process *process, pid_t pid)
     (void) close(fd);
     if (!r) return false;
 
-    process->state = info.pr_lwp.pr_state;
+    process->state = info.pr_lwp.pr_sname;
 
     process->st_uid = info.pr_uid;
 
