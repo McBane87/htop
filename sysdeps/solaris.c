@@ -202,6 +202,11 @@ void sysdep_update_cpu_data(ProcessList *this)
       unsigned long long int ioWait, irq, softIrq, steal, guest;
       ioWait = irq = softIrq = steal = guest = 0;
 
+      if(i==0){
+         // This is the "average" bar I guess. skip for now.
+         continue;
+      }
+
       usertime = cpu_stat_p->cpu_sysinfo.cpu[CPU_USER];
       systemtime = cpu_stat_p->cpu_sysinfo.cpu[CPU_KERNEL];
       idletime = cpu_stat_p->cpu_sysinfo.cpu[CPU_IDLE];
