@@ -85,6 +85,7 @@ if test "x$enable_unicode" = xyes; then
       missing_libraries="$missing_libraries libncursesw"
       AC_MSG_ERROR([You may want to use --disable-unicode or install libncursesw.])
    ])
+   AC_DEFINE([NCURSES_WIDECHAR], [1], [Define to 1 to enable wide-character support in ncurses])
    AC_CHECK_HEADERS([ncursesw/curses.h],[:],
       [AC_CHECK_HEADERS([ncurses/ncurses.h],[:],
          [AC_CHECK_HEADERS([ncurses/curses.h],[:],
