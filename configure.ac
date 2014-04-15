@@ -8,7 +8,7 @@ AC_INIT([htop],[1.0.2],[loderunner@users.sourceforge.net])
 AC_USE_SYSTEM_EXTENSIONS
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([1.11])
+AM_INIT_AUTOMAKE([subdir-objects])
 AC_CONFIG_SRCDIR([htop.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
