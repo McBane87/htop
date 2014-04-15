@@ -7,8 +7,117 @@
 #include <unistd.h>
 #include <vm/anon.h>
 
+#include <kstat.h>
+#include <sys/cpuvar.h>
+#include <stdlib.h>
+
 #include "htop-sysdeps.h"
 #include "utils.h"
+
+static kstat_ctl_t *kc = NULL;
+static kid_t kcid = 0;
+static unsigned kstat_initialized = 0;
+
+/*
+ * int kstat_safe_namematch(int num, kstat_t *ksp, char *name, void *buf)
+ *
+ * Safe scan of kstat chain for names starting with "name".  Matches
+ * are copied in to "ksp", and kstat_read is called on each match using
+ * "buf" as a buffer of length "size".  The actual number of records
+ * found is returned.  Up to "num" kstats are copied in to "ksp", but
+ * no more.  If any kstat_read indicates that the chain has changed, then
+ * the whole process is restarted.
+ */
+int kstat_safe_namematch(int num, kstat_t **ksparg, char *name, void *buf, int size){
+   kstat_t *ks;
+   kstat_t **ksp;
+   kid_t new_kcid;
+   int namelen;
+   int count;
+   int changed;
+   char *cbuf;
+
+   namelen = strlen(name);
+
+   do {
+      /* initialize before the scan */
+      cbuf = (char *)buf;
+      ksp = ksparg;
+      count = 0;
+      changed = 0;
+
+      /* scan the chain for matching kstats */
+      for (ks = kc->kc_chain; ks != NULL; ks = ks->ks_next) {
+         if (strncmp(ks->ks_name, name, namelen) == 0) {
+            /* this kstat matches: save it if there is room */
+            if (count++ < num) {
+               /* read the kstat */
+               new_kcid = kstat_read(kc, ks, cbuf);
+
+               /* if the chain changed, update it */
+               if (new_kcid != kcid) {
+                  changed = 1;
+                  kcid = kstat_chain_update(kc);
+
+                  /* there's no sense in continuing the scan */
+                  /* so break out of the for loop */
+                  break;
+               }
+
+               /* move to the next buffers */
+               cbuf += size;
+               *ksp++ = ks;
+            }
+         }
+      }
+   } while(changed);
+
+   return count;
+}
+
+static kstat_t *ks_system_misc = NULL;
+
+int kstat_safe_retrieve(kstat_t **ksp, char *module, int instance, char *name, void *buf){
+   kstat_t *ks;
+   kid_t new_kcid;
+   int changed;
+
+   ks = *ksp;
+   do {
+      changed = 0;
+      /* if we dont already have the kstat, retrieve it */
+      if (ks == NULL) {
+         if ((ks = kstat_lookup(kc, module, instance, name)) == NULL) {
+            return (-1);
+         }
+         *ksp = ks;
+      }
+
+      /* attempt to read it */
+      new_kcid = kstat_read(kc, ks, buf);
+      /* chance for an infinite loop here if kstat_read keeps 
+         returning -1 */
+
+      /* if the chain changed, update it */
+      if (new_kcid != kcid) {
+         changed = 1;
+         kcid = kstat_chain_update(kc);
+      }
+   } while (changed);
+
+   return (0);
+}
+
+int get_ncpus(){
+   kstat_named_t *kn;
+   int ret = -1;
+
+   if ((kn = kstat_data_lookup(ks_system_misc, "ncpus")) != NULL) {
+      ret = (int)(kn->value.ui32);
+   }
+
+   return ret;
+}
 
 /* dummy */
 IOPriority sysdep_get_ioprio(pid_t p)
@@ -46,6 +155,44 @@ void sysdep_get_meminfo(ProcessList *this)
 /* TODO */
 void sysdep_update_cpu_data(ProcessList *this)
 {
+   static kstat_t **cpu_ks = NULL;
+   static cpu_stat_t *cpu_stat = NULL;
+   static unsigned int nelems = 0;
+   cpu_stat_t *cpu_stat_p;
+   int i, cpu_num;
+
+   if(!kstat_initialized) {
+      /* open kstat */
+      if ((kc = kstat_open()) == NULL) {
+         fprintf(stderr, "Unable to open kstat.\n");
+         return;
+      }
+      kcid = kc->kc_chain_id;
+      kstat_safe_retrieve(&ks_system_misc, "unix", 0, "system_misc", NULL);
+      kstat_initialized = 1;
+   }
+
+   while (nelems > 0 ?
+         (cpu_num = kstat_safe_namematch(nelems,
+                                         cpu_ks,
+                                         "cpu_stat",
+                                         cpu_stat,
+                                         sizeof(cpu_stat_t))) > nelems :
+         (cpu_num = get_ncpus()) > 0)
+   {
+      /* reallocate the arrays */
+      nelems = cpu_num;
+      if (cpu_ks != NULL) {
+         free(cpu_ks);
+      }
+      cpu_ks = (kstat_t **)calloc(nelems, sizeof(kstat_t *));
+      if (cpu_stat != NULL) {
+         free(cpu_stat);
+      }
+      cpu_stat = (cpu_stat_t *)malloc(nelems * sizeof(cpu_stat_t));
+   }
+   cpu_stat_p = cpu_stat;
+
    unsigned long long int
        usertime = 0, nicetime = 0, systemtime = 0,
        systemalltime = 0, idlealltime = 0, idletime = 0,
@@ -54,6 +201,17 @@ void sysdep_update_cpu_data(ProcessList *this)
    for (int i = 0; i <= this->cpuCount; i++) {
       unsigned long long int ioWait, irq, softIrq, steal, guest;
       ioWait = irq = softIrq = steal = guest = 0;
+
+      if(i==0){
+         // This is the "average" bar I guess. skip for now.
+         continue;
+      }
+
+      usertime = cpu_stat_p->cpu_sysinfo.cpu[CPU_USER];
+      systemtime = cpu_stat_p->cpu_sysinfo.cpu[CPU_KERNEL];
+      idletime = cpu_stat_p->cpu_sysinfo.cpu[CPU_IDLE];
+      ioWait = cpu_stat_p->cpu_sysinfo.wait[W_IO] + cpu_stat_p->cpu_sysinfo.wait[W_PIO];
+
       idlealltime = idletime + ioWait;
       systemalltime = systemtime + irq + softIrq;
       virtalltime = steal + guest;
@@ -83,6 +241,8 @@ void sysdep_update_cpu_data(ProcessList *this)
       cpuData->stealTime = steal;
       cpuData->guestTime = guest;
       cpuData->totalTime = totaltime;
+
+      cpu_stat_p++;
    }
 }
 
