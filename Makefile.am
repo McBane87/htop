@@ -11,7 +11,6 @@ pixmapdir = $(datadir)/pixmaps
 pixmap_DATA = htop.png
 
 htop_CFLAGS = -DSYSCONFDIR=\"$(sysconfdir)\"
-AM_CPPFLAGS = -DNDEBUG
 
 myhtopsources = AvailableMetersPanel.c CategoriesPanel.c CheckItem.c \
 ClockMeter.c ColorsPanel.c ColumnsPanel.c CPUMeter.c CRT.c \
@@ -43,12 +42,6 @@ SUFFIXES = .h
 
 BUILT_SOURCES = $(myhtopheaders)
 htop_SOURCES = $(myhtopheaders) $(myhtopsources) config.h htop-sysdeps.h utils.h
-
-profile:
-	$(MAKE) all CFLAGS="-pg" AM_CPPFLAGS="-pg -O2 -DNDEBUG"
-
-debug:
-	$(MAKE) all CFLAGS="" AM_CPPFLAGS="-ggdb -DDEBUG"
 
 .c.h:
 	scripts/MakeHeader.py $<
