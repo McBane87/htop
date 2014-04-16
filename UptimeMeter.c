@@ -10,6 +10,8 @@ in the source distribution for its full text.
 #include "ProcessList.h"
 #include "CRT.h"
 
+#include "htop-sysdeps.h"
+
 #include <math.h>
 
 /*{
