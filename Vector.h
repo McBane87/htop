@@ -31,7 +31,7 @@ Vector* Vector_new(ObjectClass* type, bool owner, int size);
 
 void Vector_delete(Vector* this);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 
 int Vector_count(Vector* this);
 
@@ -60,7 +60,7 @@ void Vector_moveDown(Vector* this, int idx);
 
 void Vector_set(Vector* this, int idx, void* data_);
 
-#ifdef DEBUG
+#ifndef NDEBUG
 
 extern Object* Vector_get(Vector* this, int idx);
 

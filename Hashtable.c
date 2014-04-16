@@ -31,7 +31,7 @@ struct Hashtable_ {
 };
 }*/
 
-#ifdef DEBUG
+#ifndef NDEBUG
 
 static bool Hashtable_isConsistent(Hashtable* this) {
    int items = 0;
