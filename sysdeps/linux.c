@@ -283,3 +283,9 @@ sysdep_uptime ()
     }
   return (long) uptime;
 }
+
+int
+sysdep_number_of_cpus ()
+{
+  return sysconf (_SC_NPROCESSORS_ONLN);
+}

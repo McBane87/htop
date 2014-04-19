@@ -13,6 +13,7 @@ void sysdep_set_ioprio(pid_t, IOPriority);
 void sysdep_get_meminfo(ProcessList*);
 void sysdep_update_cpu_data(ProcessList *);
 int sysdep_max_pid();
+int sysdep_number_of_cpus();
 bool sysdep_get_process_info(Process *, pid_t);
 long sysdep_uptime(); // seconds since boot
 #endif

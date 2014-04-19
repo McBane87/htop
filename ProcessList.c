@@ -192,8 +192,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList) {
    /* tree-view auxiliary buffers */
    this->processes2 = Vector_new(Class(Process), true, DEFAULT_SIZE);
    
-   int cpus = sysconf(_SC_NPROCESSORS_ONLN);
-   this->cpuCount = cpus;
+   this->cpuCount = sysdep_number_of_cpus();
 
 #ifdef HAVE_LIBHWLOC
    this->topologyOk = false;
@@ -203,9 +202,9 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList) {
       this->topologyOk = true;
    }
 #endif
-   this->cpus = calloc(sizeof(CPUData), cpus);
+   this->cpus = calloc(sizeof(CPUData), this->cpuCount + 1);
 
-   for (int i = 0; i < cpus; i++) {
+   for (int i = 0; i <= this->cpuCount; i++) {
       this->cpus[i].totalTime = 1;
       this->cpus[i].totalPeriod = 1;
    }
