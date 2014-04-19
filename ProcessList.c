@@ -193,11 +193,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList) {
    this->processes2 = Vector_new(Class(Process), true, DEFAULT_SIZE);
    
    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
-#ifndef __sun
-   this->cpuCount = cpus - 1;
-#else
    this->cpuCount = cpus;
-#endif
 
 #ifdef HAVE_LIBHWLOC
    this->topologyOk = false;
