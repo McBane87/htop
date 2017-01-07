@@ -504,7 +504,7 @@ static void Process_writeField(Process* this, RichString* str, ProcessField fiel
       } else if (this->percent_cpu > 99.9) {
          snprintf(buffer, n, "%3d. ", (unsigned int)this->percent_cpu); 
       } else {
-         snprintf(buffer, n, "%4.1f ", this->percent_cpu);
+         snprintf(buffer, n, "%4.2f ", this->percent_cpu);
       }
       break;
    }
@@ -512,7 +512,7 @@ static void Process_writeField(Process* this, RichString* str, ProcessField fiel
       if (this->percent_mem > 99.9) {
          snprintf(buffer, n, "100. "); 
       } else {
-         snprintf(buffer, n, "%4.1f ", this->percent_mem);
+         snprintf(buffer, n, "%4.2f ", this->percent_mem);
       }
       break;
    }
