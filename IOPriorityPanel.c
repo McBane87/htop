@@ -7,6 +7,14 @@ in the source distribution for its full text.
 
 #include "IOPriorityPanel.h"
 
+#ifndef false
+#define false 0
+#endif
+
+#ifndef true
+#define true !false
+#endif
+
 /*{
 #include "Panel.h"
 #include "IOPriority.h"

@@ -5,12 +5,12 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "Panel.h"
 
 #include "CRT.h"
 #include "RichString.h"
 #include "ListItem.h"
 #include "String.h"
+#include "Panel.h"
 
 #include <math.h>
 #include <stdbool.h>

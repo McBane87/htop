@@ -10,6 +10,10 @@ in the source distribution for its full text.
 #include "CRT.h"
 #include "String.h"
 
+#ifndef strsep
+#include "Strsep.h"
+#endif
+
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <sys/stat.h>

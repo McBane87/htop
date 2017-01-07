@@ -5,11 +5,11 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "CRT.h"
 
 #include "config.h"
 #include "String.h"
 #include "RichString.h"
+#include "CRT.h"
 
 #include <stdio.h>
 #include <errno.h>

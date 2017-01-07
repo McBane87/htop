@@ -16,6 +16,14 @@ in the source distribution for its full text.
 
 #include <ctype.h>
 
+#ifndef false
+#define false 0
+#endif
+
+#ifndef true
+#define true !false
+#endif
+
 /*{
 
 typedef struct SignalItem_ {

@@ -5,12 +5,12 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "Vector.h"
 
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "Vector.h"
 
 /*{
 #include "Object.h"

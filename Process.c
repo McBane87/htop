@@ -5,13 +5,13 @@ Released under the GNU GPL, see the COPYING file
 in the source distribution for its full text.
 */
 
-#include "Process.h"
 
 #include "ProcessList.h"
 #include "CRT.h"
 #include "String.h"
 #include "RichString.h"
 #include "htop-sysdeps.h"
+#include "Process.h"
 
 #include <stdio.h>
 #include <sys/time.h>
