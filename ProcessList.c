@@ -459,6 +459,18 @@ static void ProcessList_readIoFile(Process* process, const char* dirname, char* 
 #endif
 
 static bool ProcessList_readStatmFile(Process* process, const char* dirname, const char* name) {
+   #ifdef __sun
+   
+   int pid = atoi(name);
+   
+   if (! sysdep_get_process_info(process, pid))
+         return false;
+   
+   errno = 0;
+   process->m_size = process->size;
+   process->m_resident = process->rssize;
+   
+   #else
    char filename[MAX_NAME+1];
    snprintf(filename, MAX_NAME, "%s/%s/statm", dirname, name);
    int fd = open(filename, O_RDONLY);
@@ -478,6 +490,8 @@ static bool ProcessList_readStatmFile(Process* process, const char* dirname, con
    process->m_lrs = strtol(p, &p, 10); if (*p == ' ') p++;
    process->m_drs = strtol(p, &p, 10); if (*p == ' ') p++;
    process->m_dt = strtol(p, &p, 10);
+   #endif
+   
    return (errno == 0);
 }
 
@@ -656,8 +670,8 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          ProcessList_readIoFile(process, dirname, name, now);
       #endif
 
-//      if (! ProcessList_readStatmFile(process, dirname, name))
-//         goto errorReadingProcess;
+      if (! ProcessList_readStatmFile(process, dirname, name))
+         goto errorReadingProcess;
 
       process->show = ! ((hideKernelThreads && Process_isKernelThread(process)) || (hideUserlandThreads && Process_isUserlandThread(process)));
 
@@ -666,10 +680,18 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          goto errorReadingProcess;
       if (this->flags & PROCESS_FLAG_IOPRIO)
          Process_updateIOPriority(process);
+      #ifdef __sun
+      process->percent_cpu = process->pctcpu;
+      #else
       float percent_cpu = (process->utime + process->stime - lasttimes) / period * 100.0;
       process->percent_cpu = MAX(MIN(percent_cpu, cpus*100.0), 0.0);
+      #endif
       if (isnan(process->percent_cpu)) process->percent_cpu = 0.0;
+      #ifdef __sun
+      process->percent_mem = process->pctmem;
+      #else
       process->percent_mem = (process->m_resident * PAGE_SIZE_KB) / (double)(this->totalMem) * 100.0;
+      #endif
 
       if(!existingProcess) {
 
@@ -716,11 +738,22 @@ static bool ProcessList_processEntries(ProcessList* this, const char* dirname, P
          }
       }
       */
+      
+      #ifdef __sun
+      if (process->nlwp > 1) {
+	this->userlandThreads = this->userlandThreads + process->nlwp - 1;
+      }
+      #endif
 
       this->totalTasks++;
+      #ifdef __sun
+      if (process->state == 'O')
+         this->runningTasks++;      
+      #else
       if (process->state == 'R')
          this->runningTasks++;
-      process->updated = true;
+      #endif
+	process->updated = true;
 
       continue;
 

@@ -10,7 +10,6 @@ config.h
 config.h.in
 config.log
 config.status
-config.sub
 htop
 htop.1
 stamp-h1

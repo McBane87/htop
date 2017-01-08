@@ -29,7 +29,11 @@ static void TasksMeter_display(Object* cast, RichString* out) {
    Meter* this = (Meter*)cast;
    ProcessList* pl = this->pl;
    char buffer[20];
+   #ifdef __sun
+   sprintf(buffer, "%d", (int)(this->total));
+   #else
    sprintf(buffer, "%d", (int)(this->total - pl->userlandThreads - pl->kernelThreads));
+   #endif
    RichString_write(out, CRT_colors[METER_VALUE], buffer);
    int threadValueColor = CRT_colors[METER_VALUE];
    int threadCaptionColor = CRT_colors[METER_TEXT];

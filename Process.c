@@ -178,6 +178,12 @@ typedef struct Process_ {
    #ifdef HAVE_CGROUP
    char* cgroup;
    #endif
+   #ifdef __sun
+   float pctcpu;
+   float pctmem;
+   unsigned int size;
+   unsigned int rssize;
+   #endif
 } Process;
 
 }*/
@@ -475,8 +481,13 @@ static void Process_writeField(Process* this, RichString* str, ProcessField fiel
    case M_DT: Process_humanNumber(this, str, this->m_dt * PAGE_SIZE_KB); return;
    case M_LRS: Process_humanNumber(this, str, this->m_lrs * PAGE_SIZE_KB); return;
    case M_TRS: Process_humanNumber(this, str, this->m_trs * PAGE_SIZE_KB); return;
+   #ifdef __sun
+   case M_SIZE: Process_humanNumber(this, str, this->m_size); return;
+   case M_RESIDENT: Process_humanNumber(this, str, this->m_resident); return;
+   #else
    case M_SIZE: Process_humanNumber(this, str, this->m_size * PAGE_SIZE_KB); return;
    case M_RESIDENT: Process_humanNumber(this, str, this->m_resident * PAGE_SIZE_KB); return;
+   #endif
    case M_SHARE: Process_humanNumber(this, str, this->m_share * PAGE_SIZE_KB); return;
    case ST_UID: snprintf(buffer, n, "%4d ", this->st_uid); break;
    case USER: {

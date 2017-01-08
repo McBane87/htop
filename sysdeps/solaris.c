@@ -327,6 +327,11 @@ sysdep_get_process_info (Process * process, pid_t pid)
   long tix = sysconf (_SC_CLK_TCK);
   process->utime = usage.pr_utime.tv_sec * tix;
   process->stime = usage.pr_stime.tv_sec * tix;
+  
+  process->pctcpu = info.pr_pctcpu * 100.0 / (float)(0x8000); 	/* % of recent cpu time used by all lwps */
+  process->pctmem = info.pr_pctmem * 100.0 / (float)(0x8000); 	/* % of system memory used by process */
+  process->rssize = info.pr_rssize;				/* resident set size in Kbytes */
+  process->size = info.pr_size;					/* size of process image in Kbytes */
 
   process->priority = info.pr_lwp.pr_pri;
   process->nice = info.pr_lwp.pr_nice - 20;

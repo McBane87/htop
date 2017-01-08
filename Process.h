@@ -156,6 +156,12 @@ typedef struct Process_ {
    #ifdef HAVE_CGROUP
    char* cgroup;
    #endif
+   #ifdef __sun
+   float pctcpu;
+   float pctmem;
+   unsigned int size;
+   unsigned int rssize;
+   #endif
 } Process;
 
 
