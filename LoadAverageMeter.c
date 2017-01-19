@@ -11,6 +11,10 @@ in the source distribution for its full text.
 
 #include <assert.h>
 
+#ifdef __sun
+#define	LOADDOUBLE(value)	((double)(value) / FSCALE)
+#endif
+
 /*{
 #include "Meter.h"
 }*/
@@ -24,6 +28,32 @@ int LoadMeter_attributes[] = { LOAD };
 static inline void LoadAverageMeter_scan(double* one, double* five, double* fifteen) {
    int activeProcs, totalProcs, lastProc;
    *one = 0; *five = 0; *fifteen = 0;
+
+   #ifdef __sun
+
+   av1 = 0; av5 = 0; av15 = 0;
+
+   if ( (KstatCtl = kstat_open()) && (MiscKsp = kstat_lookup(KstatCtl, "unix", 0, "system_misc")) ) {
+	if (kstat_read(KstatCtl, MiscKsp, NULL) != -1) {
+		av1 = (kstat_named_t *) kstat_data_lookup(MiscKsp, "avenrun_1min");
+		av5 = (kstat_named_t *) kstat_data_lookup(MiscKsp, "avenrun_5min");
+		av15 = (kstat_named_t *) kstat_data_lookup(MiscKsp, "avenrun_15min");
+
+		char sol_loadavg [4096];
+
+		sprintf (sol_loadavg, "%.2f %.2f %.2f 0/0 0", 
+			LOADDOUBLE(av1->value.ui32), LOADDOUBLE(av5->value.ui32), LOADDOUBLE(av15->value.ui32));
+
+		int total = sscanf(sol_loadavg, "%32lf %32lf %32lf %32d/%32d %32d", one, five, fifteen,
+			&activeProcs, &totalProcs, &lastProc);
+		(void) total;
+		assert(total == 6);
+
+	}
+   }
+
+   #else
+
    FILE *fd = fopen(PROCDIR "/loadavg", "r");
    if (fd) {
       int total = fscanf(fd, "%32lf %32lf %32lf %32d/%32d %32d", one, five, fifteen,
@@ -32,6 +62,8 @@ static inline void LoadAverageMeter_scan(double* one, double* five, double* fift
       assert(total == 6);
       fclose(fd);
    }
+
+   #endif
 }
 
 static void LoadAverageMeter_setValues(Meter* this, char* buffer, int size) {

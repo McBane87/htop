@@ -19,4 +19,20 @@ extern MeterClass LoadAverageMeter_class;
 
 extern MeterClass LoadMeter_class;
 
+#ifdef __sun
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <kstat.h>
+
+#ifndef	FSCALE
+#define	FSHIFT	8			/* bits to right of fixed binary point */
+#define	FSCALE	(1<<FSHIFT)
+#endif
+
+kstat_ctl_t	*KstatCtl;		/* handle */
+kstat_t		*MiscKsp;		/* some pointer */
+kstat_named_t	*av1, *av5, *av15;	/* load average */
+#endif
+
 #endif
